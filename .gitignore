@@ -1,0 +1,10 @@
+# Data files (too large / sensitive)
+*.csv
+*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
