@@ -58,11 +58,28 @@ USER_GROUPS = {
 
 
 @st.cache_data(ttl=3600)
-def load_data(time_block_minutes: int = 20):
-    """Load and cache processed data with configurable time block size"""
-    csv_path = os.path.join(os.path.dirname(__file__), 'purviewAuditLogs.csv')
-    return process_audit_logs(csv_path, time_block_minutes)
+def load_data_from_file(uploaded_file, time_block_minutes: int = 20):
+    """Load and cache processed data from uploaded file"""
+    import tempfile
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as tmp:
+        tmp.write(uploaded_file.getvalue())
+        tmp_path = tmp.name
+    return process_audit_logs(tmp_path, time_block_minutes)
 
+
+# =============================================================================
+# FILE UPLOAD
+# =============================================================================
+st.sidebar.header("Data")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload Purview CSV",
+    type=['csv'],
+    help="Export from Microsoft Purview Audit Logs"
+)
+
+if not uploaded_file:
+    st.info("👆 Upload a Purview audit log CSV file in the sidebar to get started.")
+    st.stop()
 
 # =============================================================================
 # TIME BLOCK CONFIGURATION (affects all calculations)
@@ -88,10 +105,10 @@ st.sidebar.caption(f"Activity is measured in {time_block_minutes}-minute blocks.
 
 # Load data with selected time block size
 with st.spinner(f"Loading and processing audit logs ({time_block_minutes}-min blocks)..."):
-    df = load_data(time_block_minutes)
+    df = load_data_from_file(uploaded_file, time_block_minutes)
 
 if df.empty:
-    st.error("No data found. Please ensure purviewAuditLogs.csv exists.")
+    st.error("No valid data found in the uploaded file.")
     st.stop()
 
 # Convert date column to datetime for filtering
